@@ -1,6 +1,5 @@
 from fastapi import Body
 
-
 example_create_task = Body(
     openapi_examples={
         "normal":   {

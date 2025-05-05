@@ -1,34 +1,37 @@
-from fastapi import APIRouter, status, Depends, HTTPException
-from sqlmodel import Session, select
-from app.db import get_session
-from ..schemas import task as schema_task
-from sqlalchemy.exc import IntegrityError
-from psycopg2.errors import UniqueViolation
-from fastapi.security.oauth2 import OAuth2PasswordRequestForm
-from ..auth import auth_handler
-from app.config import settings
 from datetime import timedelta
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security.oauth2 import OAuth2PasswordRequestForm
+from sqlalchemy.exc import IntegrityError
+from sqlmodel import Session, select
+
+from app.config import settings
+from app.db import get_session
+from app.models import User
+from app.schemas.task import UserCreate, UserRead
+
+from ..auth import auth_handler
 
 router = APIRouter(prefix="/auth", tags=["Безопасность"])
 
 @router.post("/signup", status_code=status.HTTP_201_CREATED,
-             response_model=int,
+             response_model=UserRead,
              summary = 'Добавить пользователя')
-def create_user(user: schema_task.User,
+def create_user(user: UserCreate,
                 session: Session = Depends(get_session)):
-    new_user = schema_task.User(
+    new_user = User(
         name=user.name,
         email=user.email,
-        password=auth_handler.get_password_hash(user.password)
+        password=auth_handler.get_password_hash(user.password),
+        skill_level=user.skill_level,
+        workload=user.workload
     )
     try:
         session.add(new_user)
         session.commit()
         session.refresh(new_user)
-        return new_user.user_id
+        return new_user
     except IntegrityError as e:
-        assert isinstance(e.orig, UniqueViolation)
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"User with email {user.email} already exists"
@@ -39,8 +42,8 @@ def create_user(user: schema_task.User,
              summary = 'Войти в систему')
 def user_login(login_attempt_data: OAuth2PasswordRequestForm = Depends(),
                db_session: Session = Depends(get_session)):
-    statement = (select(schema_task.User)
-                 .where(schema_task.User.email == login_attempt_data.username))
+    statement = (select(User)
+                 .where(User.email == login_attempt_data.username))
     existing_user = db_session.exec(statement).first()
 
     if not existing_user:
@@ -66,3 +69,8 @@ def user_login(login_attempt_data: OAuth2PasswordRequestForm = Depends(),
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Wrong password for user {login_attempt_data.username}"
         )
+
+@router.get("/me", response_model=UserRead, summary="Текущий пользователь (защищено)")
+def get_me(current_user: User = Depends(auth_handler.get_current_user)):
+    return current_user
+

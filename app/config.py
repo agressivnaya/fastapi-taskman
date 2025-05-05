@@ -1,16 +1,13 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
+"""
+app/config.py: Конфигурация приложения.
+"""
+
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env")
-    db_username: str
-    db_password: str
-    db_host: str
-    db_port: int
-    db_name: str
-    secret_key: str
-    algo: str
-    access_token_expire_minutes: int
-
+    secret_key: str = "supersecretkey"
+    algo: str = "HS256"
+    access_token_expire_minutes: int = 30
 
 settings = Settings()

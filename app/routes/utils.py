@@ -1,11 +1,14 @@
-from fastapi import APIRouter, status, Depends
-from sqlalchemy import text
-from sqlmodel import Session, select, SQLModel
-from app.db import get_session, engine
-from app.schemas.task import User
-from fastapi.security import OAuth2PasswordBearer
-from ..auth.auth_handler import get_current_user
 from typing import Annotated
+
+from fastapi import APIRouter, Depends, status
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy import text
+from sqlmodel import Session, SQLModel, select
+
+from app.db import engine, get_session
+from app.models import User
+
+from ..auth.auth_handler import get_current_user
 
 router = APIRouter(prefix="/utils", tags=["Вспомогательные инструменты"])
 

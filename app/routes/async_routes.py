@@ -1,16 +1,19 @@
 import asyncio
 import threading
 import time
-from sqlalchemy.sql import text
-import httpx
-from fastapi import APIRouter, status, Depends, HTTPException, Response
-from sqlmodel import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.db import get_async_session
-from ..schemas import task as schema_task
-from typing import List
 from datetime import date, datetime
+from typing import List
+
+import httpx
 import shortuuid
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
+
+from app.db import get_async_session
+from app.models import Task
+
+from ..schemas import task as schema_task
 
 router = APIRouter(prefix="/v2/async", tags=["Асинхронные операции"])
 
@@ -18,7 +21,7 @@ router = APIRouter(prefix="/v2/async", tags=["Асинхронные опера�
 @router.get("/tasks", status_code=status.HTTP_200_OK,
             response_model=List[schema_task.TaskRead])
 async def read_tasks_async(session: AsyncSession = Depends(get_async_session)):
-    result = await session.execute(select(schema_task.Task))
+    result = await session.execute(select(Task))
     tasks = result.scalars().all()
     if tasks is None or len(tasks) == 0:
         raise HTTPException(
@@ -34,8 +37,8 @@ async def read_tasks_for_day(response: Response,
                              due_date: date = date.today()):
     start = time.time()
     async def query_db(due_date_param):
-        statement = (select(schema_task.Task)
-                     .where(schema_task.Task.due_date == due_date_param))
+        statement = (select(Task)
+                     .where(Task.due_date == due_date_param))
         result = await session.execute(statement)
         return result.scalars().all()
 

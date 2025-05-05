@@ -32,6 +32,7 @@ def test_login():
 
 
 def test_me():
-    response = client.get("/utils/me", headers={"Authorization": f"Bearer {client.auth_token}"})
+    response = client.get("/auth/me", headers={"Authorization": f"Bearer {client.auth_token}"})
     assert response.status_code == 200
-    assert response.json() == client.new_user_id
+    assert response.json()["user_id"] == client.new_user_id
+

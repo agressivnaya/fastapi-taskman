@@ -1,3 +1,7 @@
+"""
+app/data_handler.py: Утилиты для чтения и записи задач в CSV.
+"""
+
 import csv
 
 

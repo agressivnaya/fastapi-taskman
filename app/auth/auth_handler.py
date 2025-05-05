@@ -1,14 +1,16 @@
 from datetime import datetime, timedelta, timezone
-import jwt
-from jwt.exceptions import InvalidTokenError
-from app.config import settings
 from typing import Annotated
+
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
 from sqlmodel import Session, select
+
+from app.config import settings
 from app.db import get_session
-from app.schemas import task as schema_task
+from app.models import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
@@ -55,8 +57,8 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)],
     except InvalidTokenError:
         raise credentials_exception
 
-    statement = (select(schema_task.User)
-                 .where(schema_task.User.email == username))
+    statement = (select(User)
+                 .where(User.email == username))
     user = db_session.exec(statement).first()
 
     if user is None:
